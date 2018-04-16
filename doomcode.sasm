@@ -780,7 +780,7 @@
 	(bbc	r_flags f_fuzz dc_prep_no_fuzz)
 	(st	r_fuzzpos r_batch_size mem_column_offset)
 	(s	r_t0 r_y_b 1 r_y_a)
-	(arm50	r_fuzzpos r_fuzzpos r_t0)
+	(arm	r_fuzzpos r_fuzzpos 50 r_t0)
 (label dc_prep_no_fuzz)
 	# Build start event.
 	(ai	r_dc_event r_batch_size 1)

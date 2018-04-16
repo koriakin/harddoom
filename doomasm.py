@@ -378,6 +378,21 @@ def form_rrs11r(op1, name):
     return MyNode
 
 
+def form_rri11r(op1, name):
+    @form_node
+    class MyNode(FormNode, InsnNode):
+        symbol = Symbol(name)
+        reg1 = form_arg(RegNode)
+        reg2 = form_arg(RegNode)
+        imm = form_arg(ImmNode)
+        reg3 = form_arg(RegNode)
+
+        def assemble(self, ctx):
+            return asm_rri11r(op1, self.reg1.eval(ctx), self.reg2.eval(ctx), self.imm.eval(ctx, 11), self.reg3.eval(ctx))
+
+    return MyNode
+
+
 def form_rrz11r(op1, name):
     @form_node
     class MyNode(FormNode, InsnNode):
@@ -527,14 +542,13 @@ class SourceNode(AlternativesNode):
         form_riz11z(0x03, 'clrb'),      # alias
         form_rio11z(0x03, 'setb'),      # alias
         form_rzi16(0x04, 'li'),
-        form_rri16(0x06, 'ai'),
-        form_rri16(0x07, 'rsi'),
-        form_rrs11r(0x08, 'a'),
-        form_rrz11r(0x08, 'ar'),        # alias
-        form_rrs11r(0x09, 's'),
-        form_rrz11r(0x09, 'sr'),        # alias
-        form_rrz11r(0x0a, 'arm50'),
-        form_rrz11r(0x0b, 'sign'),
+        form_rri16(0x05, 'ai'),
+        form_rrs11r(0x06, 'a'),
+        form_rrz11r(0x06, 'ar'),        # alias
+        form_rrs11r(0x07, 's'),
+        form_rrz11r(0x07, 'sr'),        # alias
+        form_rri11r(0x08, 'arm'),
+        form_rrz11r(0x09, 'sign'),
     ]
 
 
