@@ -36,12 +36,12 @@
 (const xycmd_surf_src_pt 1)
 (const xycmd_surf_dims 2)
 (const xycmd_interlock 3)
-(const xycmd_dst_h 4)
-(const xycmd_dst_v 5)
-(const xycmd_src_h 6)
-(const xycmd_src_v 7)
-(const xycmd_rdst_v 8)
-(const xycmd_fuzz_v 9)
+(const xycmd_write_dst_h 4)
+(const xycmd_write_dst_v 5)
+(const xycmd_read_src_h 6)
+(const xycmd_read_src_v 7)
+(const xycmd_read_dst_v 8)
+(const xycmd_rmw_dst_v 9)
 
 (const texcmd_texture_pt 0)
 (const texcmd_texture_dims 1)
@@ -395,8 +395,8 @@
 	(bei	r_rect_wb 1 rect_copy_v)
 (label	rect_copy_loop)
 	# Copy this line.
-	(xycmd	xycmd_src_h r_rect_sxy)
-	(xycmd	xycmd_dst_h r_rect_dxy)
+	(xycmd	xycmd_read_src_h r_rect_sxy)
+	(xycmd	xycmd_write_dst_h r_rect_dxy)
 	(ogcmd	ogcmd_copy_h r_rect_draw)
 	# Move on to the next line.
 	(ai	r_rect_sxy r_rect_sxy 0x20)
@@ -410,8 +410,8 @@
 	(dep	r_rect_dxy 16 r_rect_height 12)
 	(dep	r_rect_sxy 16 r_rect_height 12)
 	# Send them.
-	(xycmd	xycmd_src_v r_rect_sxy)
-	(xycmd	xycmd_dst_v r_rect_dxy)
+	(xycmd	xycmd_read_src_v r_rect_sxy)
+	(xycmd	xycmd_write_dst_v r_rect_dxy)
 	(ogcmd	ogcmd_copy_v r_rect_draw)
 	# And that's it.
 	(b	main)
@@ -425,7 +425,7 @@
 	(bei	r_rect_wb 1 rect_fill_v)
 (label	rect_fill_loop)
 	# Draw a line from the buffer.
-	(xycmd	xycmd_dst_h r_rect_dxy)
+	(xycmd	xycmd_write_dst_h r_rect_dxy)
 	(ogcmd	ogcmd_draw_buf_h r_rect_draw)
 	# Move on the the next line.
 	(ai	r_rect_dxy r_rect_dxy 0x20)
@@ -438,7 +438,7 @@
 	(dep	r_rect_draw 12 r_rect_height 12)
 	(dep	r_rect_dxy 16 r_rect_height 12)
 	# Send them.
-	(xycmd	xycmd_dst_v r_rect_dxy)
+	(xycmd	xycmd_write_dst_v r_rect_dxy)
 	(ogcmd	ogcmd_draw_buf_v r_rect_draw)
 	# And we're done here.
 	(b	main)
@@ -506,7 +506,7 @@
 	(extr	r_t0 r_dl_last 6 5)
 	(dep	r_t0 5 r_dl_y 11)
 	(dep	r_t0 16 r_t1 6)
-	(xycmd	xycmd_dst_h r_t0)
+	(xycmd	xycmd_write_dst_h r_t0)
 	# Compute and submit draw command.
 	(extr	r_t0 r_dl_last 0 6)
 	(s	r_t1 r_dl_x 1 r_dl_last)
@@ -527,7 +527,7 @@
 	(extr	r_t0 r_dl_last 6 5)
 	(dep	r_t0 5 r_dl_y 11)
 	(dep	r_t0 16 r_t1 6)
-	(xycmd	xycmd_dst_h r_t0)
+	(xycmd	xycmd_write_dst_h r_t0)
 	# Compute and submit draw command.
 	(extr	r_t0 r_dl_last 0 6)
 	(s	r_t1 r_dl_x 1 r_dl_last)
@@ -569,7 +569,7 @@
 	(extr	r_t0 r_dl_x 6 5)
 	(dep	r_t0 5 r_dl_last 11)
 	(dep	r_t0 16 r_t1 12)
-	(xycmd	xycmd_dst_v r_t0)
+	(xycmd	xycmd_write_dst_v r_t0)
 	# Compute and submit draw command.
 	(extr	r_t0 r_dl_x 0 6)
 	(mbi	r_t0 6 1 6)
@@ -588,7 +588,7 @@
 	(extr	r_t0 r_dl_x 6 5)
 	(dep	r_t0 5 r_dl_last 11)
 	(dep	r_t0 16 r_t1 12)
-	(xycmd	xycmd_dst_v r_t0)
+	(xycmd	xycmd_write_dst_v r_t0)
 	# Compute and submit draw command.
 	(extr	r_t0 r_dl_x 0 6)
 	(mbi	r_t0 6 1 6)
@@ -613,7 +613,7 @@
 	(mbc	r_db_draw 12 r_surf_width 0 6)
 (label db_loop)
 	(ogcmd	ogcmd_read_bg r_cmd)
-	(xycmd	xycmd_dst_h r_db_xy)
+	(xycmd	xycmd_write_dst_h r_db_xy)
 	(ogcmd	ogcmd_draw_buf_h r_db_draw)
 	(ai	r_db_xy r_db_xy 0x20)
 	(bne	r_db_xy r_db_end db_loop)
@@ -894,7 +894,7 @@
 	(mov	r_t0 r_batch_xb)
 	(dep	r_t0 5 r_fl_ly 11)
 	(dep	r_t0 16 r_fl_height 12)
-	(xycmd	xycmd_dst_v r_t0)
+	(xycmd	xycmd_write_dst_v r_t0)
 	(texcmd	texcmd_draw_tex r_fl_height)
 	(mb	r_fl_height 12 r_flags f_colormap 2)
 	(ogcmd	ogcmd_draw_tex r_fl_height)
@@ -904,7 +904,7 @@
 	(mov	r_t0 r_batch_xb)
 	(dep	r_t0 5 r_fl_ly 11)
 	(dep	r_t0 16 r_fl_height 12)
-	(xycmd	xycmd_fuzz_v r_t0)
+	(xycmd	xycmd_rmw_dst_v r_t0)
 	(fzcmd	fzcmd_draw_fuzz r_fl_height)
 	(ogcmd	ogcmd_draw_fuzz r_fl_height)
 (label fl_handle_event)
@@ -948,7 +948,7 @@
 (label fl_init_non0)
 	(dep	r_t0 5 r_t1 11)
 	(mbi	r_t0 16 1 12)
-	(xycmd	xycmd_rdst_v r_t0)
+	(xycmd	xycmd_read_dst_v r_t0)
 	(ogcmd	ogcmd_init_fuzz r_t0)
 	(b	fl_loop)
 (label fl_end_fuzz_column)
@@ -964,7 +964,7 @@
 	(dep	r_t0 5 r_t1 11)
 (label fl_fini_nonoob)
 	(mbi	r_t0 16 1 12)
-	(xycmd	xycmd_rdst_v r_t0)
+	(xycmd	xycmd_read_dst_v r_t0)
 	(bnei	r_fl_hsize 0 fl_loop)
 	(b	dispatch)
 
@@ -1003,7 +1003,7 @@
 	(extr	r_t0 r_x_a 6 5)
 	(dep	r_t0 5 r_y_a 11)
 	(dep	r_t0 16 r_t1 6)
-	(xycmd	xycmd_dst_h r_t0)
+	(xycmd	xycmd_write_dst_h r_t0)
 	# And tell OG to write them.
 	(extr	r_t0 r_x_a 0 6)
 	(mb	r_t0 6 r_flags f_colormap 2)
