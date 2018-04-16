@@ -41,6 +41,7 @@
 (const xycmd_src_h 6)
 (const xycmd_src_v 7)
 (const xycmd_rdst_v 8)
+(const xycmd_fuzz_v 9)
 
 (const texcmd_texture_pt 0)
 (const texcmd_texture_dims 1)
@@ -903,10 +904,7 @@
 	(mov	r_t0 r_batch_xb)
 	(dep	r_t0 5 r_fl_ly 11)
 	(dep	r_t0 16 r_fl_height 12)
-	(xycmd	xycmd_dst_v r_t0)
-	(ai	r_t1 r_fl_ly 1)
-	(dep	r_t0 5 r_t1 11)
-	(xycmd	xycmd_rdst_v r_t0)
+	(xycmd	xycmd_fuzz_v r_t0)
 	(fzcmd	fzcmd_draw_fuzz r_fl_height)
 	(ogcmd	ogcmd_draw_fuzz r_fl_height)
 (label fl_handle_event)
@@ -944,14 +942,29 @@
 	# If we went inactive -> active, init OG.
 	(mov	r_t0 r_batch_xb)
 	(ai	r_t1 r_fl_ny -1)
+	# Special case -- if column starts at 0, avoid reading from row -1.
+	(bnei	r_fl_ny 0 fl_init_non0)
+	(li	r_t1 0)
+(label fl_init_non0)
 	(dep	r_t0 5 r_t1 11)
-	(mbi	r_t0 16 2 12)
+	(mbi	r_t0 16 1 12)
 	(xycmd	xycmd_rdst_v r_t0)
 	(ogcmd	ogcmd_init_fuzz r_t0)
 	(b	fl_loop)
 (label fl_end_fuzz_column)
 	# FUZZ end column.
 	(ai	r_fl_active_columns r_fl_active_columns -1)
+	(bnei	r_fl_active_columns 0 fl_loop)
+	# If we went active -> inactive, read the final line.
+	(mov	r_t0 r_batch_xb)
+	(dep	r_t0 5 r_fl_ny 11)
+	# Special case -- if column starts ends at last line, avoid reading from OOB.
+	(bne	r_fl_ny r_surf_height fl_fini_nonoob)
+	(ai	r_t1 r_surf_height -1)
+	(dep	r_t0 5 r_t1 11)
+(label fl_fini_nonoob)
+	(mbi	r_t0 16 1 12)
+	(xycmd	xycmd_rdst_v r_t0)
 	(bnei	r_fl_hsize 0 fl_loop)
 	(b	dispatch)
 
