@@ -72,7 +72,7 @@
 (const ogcmd_draw_buf_v 8)
 (const ogcmd_copy_h 9)
 (const ogcmd_copy_v 10)
-(const ogcmd_copy_offset 11)
+(const ogcmd_src_offset 11)
 (const ogcmd_read_bg 12)
 (const ogcmd_draw_span 13)
 (const ogcmd_draw_fuzz 14)
@@ -389,7 +389,7 @@
 	(dep	r_rect_sxy 5 r_y_b 11)
 	(dep	r_rect_sxy 16 r_rect_swb 12)
 	# Prepare the source offset (bits 6+ will be ignored by OG).
-	(ogcmd	ogcmd_copy_offset r_y_a)
+	(ogcmd	ogcmd_src_offset r_x_a)
 	# Check if we can optimize to a vertical copy.
 	(bnei	r_rect_swb 1 rect_copy_loop)
 	(bei	r_rect_wb 1 rect_copy_v)
@@ -896,7 +896,7 @@
 	(dep	r_t0 16 r_fl_height 12)
 	(xycmd	xycmd_write_dst_v r_t0)
 	(texcmd	texcmd_draw_tex r_fl_height)
-	(mb	r_fl_height 12 r_flags f_colormap 2)
+	(mb	r_fl_height 24 r_flags f_colormap 2)
 	(ogcmd	ogcmd_draw_tex r_fl_height)
 	(b fl_handle_event)
 (label fl_draw_fuzz)
@@ -950,6 +950,8 @@
 	(mbi	r_t0 16 1 12)
 	(xycmd	xycmd_read_dst_v r_t0)
 	(ogcmd	ogcmd_init_fuzz r_t0)
+	# Resend the column command -- it got cleared.
+	(ogcmd	ogcmd_fuzz_column r_fl_x)
 	(b	fl_loop)
 (label fl_end_fuzz_column)
 	# FUZZ end column.
@@ -1006,8 +1008,8 @@
 	(xycmd	xycmd_write_dst_h r_t0)
 	# And tell OG to write them.
 	(extr	r_t0 r_x_a 0 6)
-	(mb	r_t0 6 r_flags f_colormap 2)
-	(dep	r_t0 8 r_ds_width 12)
+	(dep	r_t0 6 r_ds_width 12)
+	(mb	r_t0 24 r_flags f_colormap 2)
 	(ogcmd	ogcmd_draw_span r_t0)
 	(b	main)
 
