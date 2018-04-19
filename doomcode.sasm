@@ -24,11 +24,11 @@
 (register r_flags 30)
 # These are straight from DRAW_PARAMS.
 (const f_fuzz 0)
-(const f_colormap 1)
-(const f_translate 2)
+(const f_translate 1)
+(const f_colormap 2)
 # 1 iff OG has up-to-date copy of the current colormap and translation.
-(const f_colormap_valid 3)
-(const f_translation_valid 4)
+(const f_translation_valid 3)
+(const f_colormap_valid 4)
 # The command currently being processed.
 (register r_cmd 31)
 
@@ -93,6 +93,23 @@
 (const err_draw_column_reversed 0x00a)
 (const err_draw_span_reversed 0x00b)
 
+(const stat_copy_rect_horizontal 0x0)
+(const stat_copy_rect_line 0x1)
+(const stat_copy_rect_vertical 0x2)
+(const stat_fill_rect_horizontal 0x3)
+(const stat_fill_rect_line 0x4)
+(const stat_fill_rect_vertical 0x5)
+(const stat_draw_line_horizontal 0x6)
+(const stat_draw_line_vertical 0x7)
+(const stat_draw_line_h_chunk 0x8)
+(const stat_draw_line_v_chunk 0x9)
+(const stat_draw_line_h_pixel 0xa)
+(const stat_draw_line_v_pixel 0xb)
+(const stat_draw_background 0xc)
+(const stat_draw_column_tex_batch 0xd)
+(const stat_draw_column_fuzz_batch 0xe)
+(const stat_draw_span 0xf)
+
 (const max_batch_size 102)
 # Cell 0 unused (to simplify heap calculations).
 (const mem_batch_events 0)
@@ -117,7 +134,7 @@
 	(rcmd	r_cmd)
 (label dispatch)
 	# Commands < 0x20 are invalid here.
-	(bbc	r_t0 31 cmd_reserved_type)
+	(bbc	r_cmd 31 cmd_reserved_type)
 	# r_t0 <- command & 0x1f
 	(extr	r_t0 r_cmd 26 5)
 	# Branch thru the main jump table.
@@ -391,13 +408,16 @@
 	# Prepare the source offset (bits 6+ will be ignored by OG).
 	(ogcmd	ogcmd_src_offset r_x_a)
 	# Check if we can optimize to a vertical copy.
-	(bnei	r_rect_swb 1 rect_copy_loop)
+	(bnei	r_rect_swb 1 rect_copy_horiz)
 	(bei	r_rect_wb 1 rect_copy_v)
+(label	rect_copy_horiz)
+	(stat	stat_copy_rect_horizontal)
 (label	rect_copy_loop)
 	# Copy this line.
 	(xycmd	xycmd_read_src_h r_rect_sxy)
 	(xycmd	xycmd_write_dst_h r_rect_dxy)
 	(ogcmd	ogcmd_copy_h r_rect_draw)
+	(stat	stat_copy_rect_line)
 	# Move on to the next line.
 	(ai	r_rect_sxy r_rect_sxy 0x20)
 	(ai	r_rect_dxy r_rect_dxy 0x20)
@@ -405,6 +425,7 @@
 	(b	main)
 
 (label rect_copy_v)
+	(stat	stat_copy_rect_vertical)
 	# Vertical copy -- convert the prepared commands to vertical.
 	(dep	r_rect_draw 12 r_rect_height 12)
 	(dep	r_rect_dxy 16 r_rect_height 12)
@@ -423,10 +444,12 @@
 	(ogcmd	ogcmd_fill_color r_fill_color)
 	# Check if we can optimize to a vertical fill.
 	(bei	r_rect_wb 1 rect_fill_v)
+	(stat	stat_fill_rect_horizontal)
 (label	rect_fill_loop)
 	# Draw a line from the buffer.
 	(xycmd	xycmd_write_dst_h r_rect_dxy)
 	(ogcmd	ogcmd_draw_buf_h r_rect_draw)
+	(stat	stat_fill_rect_line)
 	# Move on the the next line.
 	(ai	r_rect_dxy r_rect_dxy 0x20)
 	(bne	r_rect_dxy r_rect_end rect_fill_loop)
@@ -434,6 +457,7 @@
 	(b	main)
 
 (label rect_fill_v)
+	(stat	stat_fill_rect_vertical)
 	# Vertical fill -- convert the prepared commands to vertical.
 	(dep	r_rect_draw 12 r_rect_height 12)
 	(dep	r_rect_dxy 16 r_rect_height 12)
@@ -472,6 +496,7 @@
 	# Decide between horizontal and vertical.
 	(bg	r_dl_ay r_dl_ax dl_vertical)
 	# Horizontal line -- start from the left.
+	(stat	stat_draw_line_horizontal)
 	(bg	r_x_a r_x_b dl_h_ba)
 	# a -> b.
 	(mov	r_dl_x r_x_a)
@@ -490,8 +515,10 @@
 	(sr	r_dl_d r_dl_ay r_dl_ax)
 	(ar	r_dl_ax r_dl_ax r_dl_ax)
 	(mov	r_dl_last r_dl_x)
+	(stat	stat_draw_line_h_pixel)
 	(b	dl_h_loop_entry)
 (label dl_h_loop)
+	(stat	stat_draw_line_h_pixel)
 	# Do an X step.
 	(ai	r_dl_x r_dl_x 1)
 	(ar	r_dl_d r_dl_d r_dl_ay)
@@ -517,6 +544,7 @@
 	# Do a Y step.
 	(ar	r_dl_y r_dl_y r_dl_s)
 	(sr	r_dl_d r_dl_d r_dl_ax)
+	(stat	stat_draw_line_h_chunk)
 	(b	dl_h_loop)
 (label dl_h_loop_exit)
 	# Compute block width.
@@ -536,6 +564,7 @@
 	(b main)
 
 (label dl_vertical)
+	(stat	stat_draw_line_vertical)
 	# Vertical line -- start from the top.
 	(bg	r_y_a r_y_b dl_v_ba)
 	# a -> b.
@@ -555,8 +584,10 @@
 	(sr	r_dl_d r_dl_ax r_dl_ay)
 	(ar	r_dl_ay r_dl_ay r_dl_ay)
 	(mov	r_dl_last r_dl_y)
+	(stat	stat_draw_line_v_pixel)
 	(b	dl_v_loop_entry)
 (label dl_v_loop)
+	(stat	stat_draw_line_v_pixel)
 	# Do a Y step.
 	(ai	r_dl_y r_dl_y 1)
 	(ar	r_dl_d r_dl_d r_dl_ax)
@@ -580,6 +611,7 @@
 	# Do an X step.
 	(ar	r_dl_x r_dl_x r_dl_s)
 	(sr	r_dl_d r_dl_d r_dl_ay)
+	(stat	stat_draw_line_v_chunk)
 	(b	dl_v_loop)
 (label dl_v_loop_exit)
 	# Compute height.
@@ -611,6 +643,7 @@
 	(mbc	r_db_end 5 r_surf_height 0 12)
 	(ar	r_db_end r_db_end r_db_xy)
 	(mbc	r_db_draw 12 r_surf_width 0 6)
+	(stat	stat_draw_background)
 (label db_loop)
 	(ogcmd	ogcmd_read_bg r_cmd)
 	(xycmd	xycmd_write_dst_h r_db_xy)
@@ -650,10 +683,14 @@
 	(li	r_batch_size 0)
 	(extr	r_batch_xb r_x_a 6 5)
 	# Go to the in-batch path.
-	(bbc	r_flags f_fuzz dc_column_ok)
+	(bbc	r_flags f_fuzz dc_start_batch_tex)
+	(stat	stat_draw_column_fuzz_batch)
 	# But for FUZZ, do an interlock first.
 	(xycmd	xycmd_interlock r_cmd)
 	(ogcmd	ogcmd_interlock r_cmd)
+	(b	dc_column_ok)
+(label dc_start_batch_tex)
+	(stat	stat_draw_column_tex_batch)
 	(b	dc_column_ok)
 
 (label dc_err_reversed)
@@ -666,7 +703,7 @@
 (label dc_main)
 	(rcmd	r_cmd)
 	# Commands < 0x20 are invalid here.
-	(bbc	r_t0 31 dc_flush)
+	(bbc	r_cmd 31 dc_flush)
 	# r_t0 <- command & 0x1f
 	(extr	r_t0 r_cmd 26 5)
 	# Branch thru the batch jump table.
@@ -817,7 +854,7 @@
 	# We're smaller than the parent.  Store the parent to our index, and
 	# retry with parent's index.
 	(st	r_t1 r_dc_idx mem_batch_events)
-	(mov	r_dc_idx r_t1)
+	(mov	r_dc_idx r_t0)
 	(b	dc_heap_store)
 (label dc_heap_store_end)
 	(st	r_dc_event r_dc_idx mem_batch_events)
@@ -896,7 +933,7 @@
 	(dep	r_t0 16 r_fl_height 12)
 	(xycmd	xycmd_write_dst_v r_t0)
 	(texcmd	texcmd_draw_tex r_fl_height)
-	(mb	r_fl_height 24 r_flags f_colormap 2)
+	(mb	r_fl_height 24 r_flags f_translate 2)
 	(ogcmd	ogcmd_draw_tex r_fl_height)
 	(b fl_handle_event)
 (label fl_draw_fuzz)
@@ -1009,8 +1046,9 @@
 	# And tell OG to write them.
 	(extr	r_t0 r_x_a 0 6)
 	(dep	r_t0 6 r_ds_width 12)
-	(mb	r_t0 24 r_flags f_colormap 2)
+	(mb	r_t0 24 r_flags f_translate 2)
 	(ogcmd	ogcmd_draw_span r_t0)
+	(stat	stat_draw_span)
 	(b	main)
 
 (label ds_err_reversed)
