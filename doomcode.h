@@ -172,7 +172,7 @@ static const uint32_t doomcode[] = {
 	0x1d480025,
 	0x0852dc0a,
 	0x0858280b,
-	0x000f400b,
+	0x000f600b,
 	0x055010b0,
 	0x044810b9,
 	0x00160000,

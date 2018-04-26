@@ -406,7 +406,7 @@
 	(dep	r_rect_sxy 5 r_y_b 11)
 	(dep	r_rect_sxy 16 r_rect_swb 12)
 	# Prepare the source offset (bits 6+ will be ignored by OG).
-	(ogcmd	ogcmd_src_offset r_x_a)
+	(ogcmd	ogcmd_src_offset r_x_b)
 	# Check if we can optimize to a vertical copy.
 	(bnei	r_rect_swb 1 rect_copy_horiz)
 	(bei	r_rect_wb 1 rect_copy_v)
